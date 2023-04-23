@@ -1,11 +1,17 @@
 <template>
   <div>
-    <h1>Cálculo de CRC</h1>
-    <label for="polynomial">Polinomio:</label>
-    <input type="text" id="polynomial" v-model="polynomial" />
-    <button @click="calculateCRC()">Calcular CRC</button>
+    <h2>Cálculo del Método de Redundancia Cíclica (CRC)</h2>
+    <div>
+      <label for="polynomial">Polinomio:</label>
+      <input type="text" id="polynomial" v-model="polynomial">
+    </div>
+    <div>
+      <label for="generator">Generador:</label>
+      <input type="text" id="generator" v-model="generator">
+    </div>
+    <button @click="calculate">Calcular</button>
     <div v-if="crc">
-      <p>CRC: {{ crc }}</p>
+      <p>Código CRC: {{ crc }}</p>
     </div>
   </div>
 </template>
@@ -15,24 +21,32 @@ export default {
   data () {
     return {
       polynomial: '',
-      crc: null
+      generator: '',
+      crc: ''
     }
   },
   methods: {
-    calculateCRC () {
-      const polynomialArray = this.polynomial.split('').map(Number)
-      const generatorArray = [1, 1, 0, 1, 0, 1] // Generador utilizado para el ejemplo
-      const paddedPolynomial = polynomialArray.concat(Array(generatorArray.length - 1).fill(0))
-      const remainder = [...paddedPolynomial]
-      for (let i = 0; i < polynomialArray.length; i++) {
+    calculate () {
+      // Convertir el polinomio y el generador a arrays de bits
+      const polynomialArray = this.polynomial.split('').map(bit => parseInt(bit, 10))
+      const generatorArray = this.generator.split('').map(bit => parseInt(bit, 10))
+
+      // Añadir ceros al polinomio para que tenga la misma longitud que el generador
+      polynomialArray.push(...Array(generatorArray.length - 1).fill(0))
+
+      // División utilizando el método de Redundancia Cíclica (CRC)
+      const remainder = polynomialArray.slice()
+      for (let i = 0; i < polynomialArray.length - generatorArray.length + 1; i++) {
         if (remainder[i] === 0) {
           continue
         }
         for (let j = 0; j < generatorArray.length; j++) {
-          remainder[i + j] = (remainder[i + j] + generatorArray[j]) % 2
+          remainder[i + j] ^= generatorArray[j]
         }
       }
-      const crc = remainder.slice(polynomialArray.length).join('')
+
+      // Convertir el resto en el código CRC y devolverlo como una cadena de bits
+      const crc = remainder.slice(-generatorArray.length + 1).join('')
       this.crc = crc
     }
   }
